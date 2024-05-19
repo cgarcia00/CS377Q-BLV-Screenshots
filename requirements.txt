@@ -11,3 +11,6 @@ py3-tts
 # For Screenshot Python App
 requests
 flask
+
+# For cropping
+openai
