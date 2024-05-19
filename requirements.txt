@@ -1,0 +1,13 @@
+# using python3.11
+
+# OCR redaction packages
+opencv-python
+pillow
+easyocr
+
+# Screenshot Tool GUI
+py3-tts
+
+# For Screenshot Python App
+requests
+flask
