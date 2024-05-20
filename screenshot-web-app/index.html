@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Accessible Screenshot App</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>Accessible Screenshot App</h1>
+
+    <button id="captureButton" aria-describedby="captureDesc">
+      Capture Entire Screen
+    </button>
+    <span id="captureDesc" class="sr-only"
+      >Click to capture the entire screen</span
+    >
+
+    <div>
+      <label for="uploadInput" aria-describedby="uploadDesc"
+        >Upload an Image:</label
+      >
+      <input type="file" id="uploadInput" accept="image/*" />
+      <span id="uploadDesc" class="sr-only"
+        >Select an image file to upload</span
+      >
+    </div>
+
+    <div id="imageResult" aria-live="assertive"></div>
+    <div id="screenshotResult" aria-live="assertive"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
