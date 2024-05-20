@@ -8,9 +8,10 @@ easyocr
 # Screenshot Tool GUI
 py3-tts
 
-# For Screenshot Python App
+# For Screenshot Python Backend
 requests
 flask
+flask-cors
 
 # For cropping
 openai

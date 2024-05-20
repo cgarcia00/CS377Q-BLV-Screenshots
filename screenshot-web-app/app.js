@@ -1,70 +1,158 @@
 document.addEventListener("DOMContentLoaded", function () {
   const captureButton = document.getElementById("captureButton");
-  const screenshotResult = document.getElementById("screenshotResult");
   const uploadInput = document.getElementById("uploadInput");
   const imageResult = document.getElementById("imageResult");
+  const redactOptions = document.getElementById("redactOptions");
+  const redactButton = document.getElementById("redactButton");
+  const chatLog = document.getElementById("chatLog");
+  const userInput = document.getElementById("userInput");
+  const sendButton = document.getElementById("sendButton");
 
+  let selectedRedactOption = "none";
+  let imageFile = null;
+
+  // Listener for selecting redaction option
+  redactOptions.addEventListener("change", function (event) {
+    selectedRedactOption = event.target.value;
+    console.log("Selected Redact Option:", selectedRedactOption);
+  });
+
+  // Listener for screenshotting
   captureButton.addEventListener("click", async function () {
     try {
-      // Request screen capture
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { cursor: "always" },
       });
 
-      // Create a video element to capture the stream
       const video = document.createElement("video");
       video.srcObject = stream;
       video.onloadedmetadata = function () {
         video.play();
 
         video.addEventListener("playing", () => {
-          // Wait for a short period to allow screen selection
           setTimeout(() => {
-            // Create a canvas to draw the video frame
             const canvas = document.createElement("canvas");
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext("2d");
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Stop the video stream
             stream.getTracks().forEach((track) => track.stop());
 
-            // Get the screenshot as a data URL
-            const dataURL = canvas.toDataURL();
-
-            // Create an image element to display the screenshot
-            const img = document.createElement("img");
-            img.src = dataURL;
-            img.alt = "Screenshot of the entire screen";
-
-            // Clear previous result and append the new screenshot
-            screenshotResult.innerHTML = "";
-            screenshotResult.appendChild(img);
-          }, 1000); // Adjust the delay as needed
+            canvas.toBlob((blob) => {
+              imageFile = new File([blob], "screenshot.png", {
+                type: "image/png",
+              });
+              displayImage(URL.createObjectURL(imageFile));
+            }, "image/png");
+          }, 1000);
         });
       };
     } catch (error) {
       console.error("Error capturing screen:", error);
-      screenshotResult.textContent =
-        "Error capturing screen. Please try again.";
+      imageResult.textContent = "Error capturing screen. Please try again.";
     }
   });
 
+  // Listener for upload
   uploadInput.addEventListener("change", function (event) {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const img = document.createElement("img");
-        img.src = e.target.result;
-        img.alt = "Uploaded image";
-
-        // Clear previous result and append the new image
-        imageResult.innerHTML = "";
-        imageResult.appendChild(img);
-      };
-      reader.readAsDataURL(file);
+      imageFile = file;
+      displayImage(URL.createObjectURL(file));
     }
   });
+
+  // Listenr for redact button
+  redactButton.addEventListener("click", async function () {
+    if (selectedRedactOption === "none" || !imageFile) {
+      alert(
+        "Please upload an image or capture a screenshot and select a redact option."
+      );
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("category", selectedRedactOption);
+
+    // API call to backend
+    try {
+      const response = await fetch("http://127.0.0.1:5000/redact", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      imageFile = new File([blob], "redacted.png", { type: "image/png" });
+
+      displayImage(url);
+    } catch (error) {
+      console.error("Error redacting image:", error);
+      imageResult.textContent = "Error redacting image. Please try again.";
+    }
+  });
+
+  // Chatbot listener
+  sendButton.addEventListener("click", async function () {
+    const userMessage = userInput.value.trim();
+    if (!userMessage || !imageFile) {
+      alert("Please enter a message and ensure an image is available.");
+      return;
+    }
+
+    const userMessageDiv = document.createElement("div");
+    userMessageDiv.textContent = `User: ${userMessage}`;
+    chatLog.appendChild(userMessageDiv);
+
+    userInput.value = "";
+
+    const formData = new FormData();
+    formData.append("message", userMessage);
+    formData.append("image", imageFile);
+
+    // API call to backend for chat
+    try {
+      const response = await fetch("http://127.0.0.1:5000/chat", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      console.log("API response:", data); // Debugging log
+
+      if (data.message) {
+        const botMessage = data.message;
+        const botMessageDiv = document.createElement("div");
+        botMessageDiv.innerHTML = marked.parse(botMessage);
+        chatLog.appendChild(botMessageDiv);
+
+        // Use Web Speech API to read out the bot's response
+        // const utterance = new SpeechSynthesisUtterance(botMessage);
+        // window.speechSynthesis.speak(utterance);
+      } else {
+        throw new Error("API response does not contain message.");
+      }
+    } catch (error) {
+      console.error("Error calling chat API:", error);
+      const errorMessageDiv = document.createElement("div");
+      errorMessageDiv.textContent = "Error calling chat API. Please try again.";
+      chatLog.appendChild(errorMessageDiv);
+    }
+  });
+
+  // Function to display the image
+  function displayImage(src) {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "Displayed image";
+    imageResult.innerHTML = "";
+    imageResult.appendChild(img);
+  }
 });

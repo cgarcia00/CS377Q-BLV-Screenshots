@@ -14,7 +14,37 @@ body {
     border: 0;
 }
 
-#screenshotResult img {
+#screenshotResult img, #imageResult img {
     max-width: 100%;
     margin-top: 20px;
+}
+
+#mainContent {
+    display: flex;
+    justify-content: space-between;
+}
+
+#imageSection {
+    flex: 1;
+    margin-right: 20px;
+}
+
+#chatbox {
+    width: 300px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#chatLog {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+#userInput {
+    width: calc(100% - 80px);
+    margin-right: 10px;
 }
