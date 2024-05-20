@@ -6,7 +6,6 @@ from PIL import Image
 
 # Set up your OpenAI API key
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-
 client = openai.OpenAI()
 
 def encode_image(image_path):

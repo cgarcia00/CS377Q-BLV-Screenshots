@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Accessible Screenshot App</title>
+    <title>Accessible Screenshot/Redactions App</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </head>
   <body>
-    <h1>Accessible Screenshot App</h1>
+    <h1>Accessible Screenshot/Redactions App</h1>
 
     <button id="captureButton" aria-describedby="captureDesc">
       Capture Entire Screen
@@ -26,8 +27,39 @@
       >
     </div>
 
-    <div id="imageResult" aria-live="assertive"></div>
-    <div id="screenshotResult" aria-live="assertive"></div>
+    <div>
+      <label for="redactOptions" aria-describedby="redactDesc"
+        >Select Redact Option:</label
+      >
+      <select id="redactOptions">
+        <option value="none">None</option>
+        <option value="email">Email</option>
+        <option value="phone">Phone</option>
+        <option value="ssn">SSN</option>
+        <option value="numbers">Numbers</option>
+      </select>
+      <span id="redactDesc" class="sr-only"
+        >Select an option to redact from the image</span
+      >
+    </div>
+
+    <button id="redactButton">Submit Redaction</button>
+
+    <div id="mainContent">
+      <div id="imageSection">
+        <div id="imageResult" aria-live="assertive"></div>
+      </div>
+      <div id="chatbox">
+        <h2>Chat with GPT-4</h2>
+        <div id="chatLog"></div>
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Ask about the image..."
+        />
+        <button id="sendButton">Send</button>
+      </div>
+    </div>
 
     <script src="app.js"></script>
   </body>
