@@ -2,12 +2,14 @@ import sys
 import base64
 from dotenv import load_dotenv
 import os
-import requests
+import openai
+import json
 
 load_dotenv()
 
-# Replace with your OpenAI API key
-api_key = os.environ.get("OPENAI_API_KEY")
+# Set up OpenAI API key
+openai.api_key = os.environ.get("OPENAI_API_KEY")
+client = openai.OpenAI()
 
 def read_image(image_path):
     """Read the image file and return its binary content."""
@@ -17,39 +19,32 @@ def read_image(image_path):
 
 def send_image_to_openai(image_data):
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
+    prompt = 'Based on this image of a desktop screen return a json with brief 1-5 word descriptions of each open window. I want the format {"windows": [list of windows]}.Return nothing but the json.'
 
-    data = {
-        "model": "gpt-4-turbo",  # Specify the model
-        "messages": [
-            {"role": "system", 
-             "content": [
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
                 {
-                "type": "text",
-                "text": "The following is a base64-encoded image. Please analyze it and answer the question: How many windows are present in this screenshot? List the windows you identify."
-                },
-                {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{image_data}"
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"{prompt}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{image_data}",
+                        },
+                    },
+                ],
                 }
-                }
-            ]},
-        ], 
-        "max_tokens": 300  # Specify the maximum number of tokens to generate
-    }
-
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error: {response.status_code}")
-        print(response.text)
-        return None
+            ],
+            temperature=0.0,
+        )
+        response_string = response.choices[0].message.content
+        response_string = response_string[response_string.index("{"):response_string.rindex("}")+1]
+        return response_string
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
