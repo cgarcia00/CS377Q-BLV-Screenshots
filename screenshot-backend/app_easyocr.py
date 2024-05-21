@@ -1,7 +1,6 @@
 import os
 import re
 import cv2
-import pytesseract
 import numpy as np
 from flask import Flask, request, jsonify, send_file
 from PIL import Image
@@ -10,6 +9,7 @@ import base64
 import openai
 from flask_cors import CORS
 import json
+import easyocr
 
 app = Flask(__name__)
 CORS(app)  # Enables CORS
@@ -47,46 +47,40 @@ def redact_image():
 
     # Read the image from the uploaded file
     image = Image.open(image_file)
-    image_np = np.array(image)
     
-    # Ensure the image is in 8-bit 3-channel format
+    # Convert PIL image to numpy array
+    image_np = np.array(image)
+
+    # Ensure the image is 8-bit 3-channel
     if image_np.dtype != np.uint8:
         image_np = image_np.astype(np.uint8)
-    
-    if len(image_np.shape) == 2:  # If grayscale, convert to color
+    if len(image_np.shape) == 2:
         image_np = cv2.cvtColor(image_np, cv2.COLOR_GRAY2RGB)
-    elif image_np.shape[2] == 4:  # If RGBA, convert to RGB
+    elif image_np.shape[2] == 4:
         image_np = cv2.cvtColor(image_np, cv2.COLOR_RGBA2RGB)
     
-    # Convert the image to grayscale for OCR
-    gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
-    
-    # Perform OCR using Tesseract
-    custom_config = r'--oem 3 --psm 6'
-    ocr_result = pytesseract.image_to_data(gray, config=custom_config, output_type=pytesseract.Output.DICT)
-    
+    # Initialize EasyOCR reader
+    reader = easyocr.Reader(['en'])  # Set to English
+
+    # Detect text in the image
+    results = reader.readtext(image_np)
+
     # Create a mask for the detected text
     mask = np.zeros(image_np.shape[:2], dtype=np.uint8)
-    
-    # Iterate over each text element and make masks
-    for i in range(len(ocr_result['text'])):
-        text = ocr_result['text'][i]
+
+    # Draw white rectangles on the mask where phone numbers are located
+    for (bbox, text, prob) in results:
         if pattern.match(text):
-            (x, y, w, h) = (ocr_result['left'][i], ocr_result['top'][i], ocr_result['width'][i], ocr_result['height'][i])
-            cv2.rectangle(mask, (x, y), (x + w, y + h), (255), -1)
+            (top_left, top_right, bottom_right, bottom_left) = bbox
+            top_left = (int(top_left[0]), int(top_left[1]))
+            bottom_right = (int(bottom_right[0]), int(bottom_right[1]))
+            cv2.rectangle(mask, top_left, bottom_right, (255), -1)
             # Draw a rectangle outline for visualization
-            cv2.rectangle(image_np, (x, y), (x + w, y + h), (0, 255, 0), 2)  # Green color outline
-    
-    # Ensure the mask is in the correct format
-    if mask.dtype != np.uint8:
-        mask = mask.astype(np.uint8)
+            cv2.rectangle(image_np, top_left, bottom_right, (0, 255, 0), 2)  # Green color outline
 
     # Inpaint the image using the mask
     inpainted_image = cv2.inpaint(image_np, mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
-    
-    # Convert the inpainted image from BGR to RGB
-    # inpainted_image_rgb = cv2.cvtColor(inpainted_image, cv2.COLOR_BGR2RGB)
-    
+
     # Convert the inpainted image to a format suitable for sending back to the client
     inpainted_image_pil = Image.fromarray(inpainted_image)
     byte_io = io.BytesIO()
