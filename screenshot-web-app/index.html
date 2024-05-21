@@ -10,14 +10,19 @@
   <body>
     <h1>Accessible Screenshot/Redactation App</h1>
 
-    <button id="captureButton" aria-describedby="captureDesc">
-      Capture Entire Screen
-    </button>
-    <span id="captureDesc" class="sr-only"
-      >Click to capture the entire screen</span
-    >
+    <div id="captureContainer">
+      <label for="captureInput" aria-describedby="captureDesc"
+        >Take Screenshot:</label
+      >
+      <button id="captureButton" aria-describedby="captureDesc">
+        Capture Entire Screen
+      </button>
+      <span id="captureDesc" class="sr-only"
+        >Click to capture the entire screen</span
+      >
+    </div>
 
-    <div>
+    <div id="uploadContainer">
       <label for="uploadInput" aria-describedby="uploadDesc"
         >Upload an Image:</label
       >
@@ -27,35 +32,45 @@
       >
     </div>
 
-    <div>
-      <label for="redactOptions" aria-describedby="redactDesc"
-        >Select Redact Option:</label
-      >
-      <select id="redactOptions">
-        <option value="none">None</option>
-        <option value="email">Email</option>
-        <option value="phone">Phone</option>
-        <option value="ssn">SSN</option>
-        <option value="numbers">Numbers</option>
-      </select>
-      <span id="redactDesc" class="sr-only"
-        >Select an option to redact from the image</span
-      >
+    <div id="toolBar">
+      <div id="redactTool">
+        <div>
+          <label for="redactOptions" aria-describedby="redactDesc"
+            >Select Redact Option:</label
+          >
+          <select id="redactOptions">
+            <option value="none">None</option>
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+            <option value="ssn">SSN</option>
+            <option value="numbers">Numbers</option>
+          </select>
+          <span id="redactDesc" class="sr-only"
+            >Select an option to redact from the image</span
+          >
+        </div>
+
+        <button id="redactButton">Submit Redaction</button>
+      </div>
+
+      <div id="cropTool">
+        <div>
+          <label for="windowOptions" aria-describedby="windowDesc"
+            >Select Window:</label
+          >
+          <select id="windowOptions">
+            <!-- Options will be populated dynamically -->
+          </select>
+          <span id="windowDesc" class="sr-only"
+            >Select a window in the image</span
+          >
+        </div>
+
+        <button id="cropButton">Submit Cropping</button>
+      </div>
     </div>
 
-    <button id="redactButton">Submit Redaction</button>
-
-    <div>
-      <label for="windowOptions" aria-describedby="windowDesc"
-        >Select Window:</label
-      >
-      <select id="windowOptions">
-        <!-- Options will be populated dynamically -->
-      </select>
-      <span id="windowDesc" class="sr-only">Select a window in the image</span>
-    </div>
-
-    <button id="cropButton">Submit Cropping</button>
+    <div class="line"></div>
 
     <div id="mainContent">
       <div id="imageSection">
