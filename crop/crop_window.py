@@ -2,9 +2,10 @@ import openai
 import os
 import base64
 import json
+import re
 from PIL import Image
 
-# Set up your OpenAI API key
+# Set up OpenAI API key
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 client = openai.OpenAI()
 
@@ -12,14 +13,14 @@ def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
-def crop_browser_window(image_path, output_path):
+def crop_browser_window(image_path, output_path, window):
     base64_image = encode_image(image_path)
     with Image.open(image_path) as img:
         width, height = img.size
 
     prompt = f"""
     I have an image with dimensions {width}x{height}. 
-    Please provide the coordinates to crop this image to only contain the browser window. 
+    Please provide the coordinates to crop this image to only contain the {window}. 
     Format the response as 'left, top, right, bottom' in json and say nothing else.
     """
 
@@ -41,7 +42,9 @@ def crop_browser_window(image_path, output_path):
         ],
         temperature=0.0,
     )
-    coordinates = json.loads(response.choices[0].message.content[7:-3])
+    response_string = response.choices[0].message.content
+    response_string = response_string[response_string.index("{"):response_string.rindex("}")+1]
+    coordinates = json.loads(response_string)
     left, top, right, bottom = coordinates["left"], coordinates["top"], coordinates["right"], coordinates["bottom"]
 
     with Image.open(image_path) as img:
@@ -51,4 +54,4 @@ def crop_browser_window(image_path, output_path):
         cropped_img.save(output_path)
         print(f"Cropped image saved to {output_path}")
 
-crop_browser_window('screenshot.png', 'cropped_browser.png')
+crop_browser_window('screenshot.png', 'cropped_browser.png', "browser")

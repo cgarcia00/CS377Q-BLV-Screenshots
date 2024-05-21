@@ -4,17 +4,26 @@ document.addEventListener("DOMContentLoaded", function () {
   const imageResult = document.getElementById("imageResult");
   const redactOptions = document.getElementById("redactOptions");
   const redactButton = document.getElementById("redactButton");
+  const windowOptions = document.getElementById("windowOptions");
+  const cropButton = document.getElementById("cropButton");
   const chatLog = document.getElementById("chatLog");
   const userInput = document.getElementById("userInput");
   const sendButton = document.getElementById("sendButton");
 
   let selectedRedactOption = "none";
+  let selectedWindow = null;
   let imageFile = null;
 
   // Listener for selecting redaction option
   redactOptions.addEventListener("change", function (event) {
     selectedRedactOption = event.target.value;
     console.log("Selected Redact Option:", selectedRedactOption);
+  });
+
+  // Listener for selection window
+  windowOptions.addEventListener("change", function (event) {
+    selectedWindow = event.target.value;
+    console.log("Selected Window:", selectedWindow);
   });
 
   // Listener for screenshotting
@@ -44,6 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 type: "image/png",
               });
               displayImage(URL.createObjectURL(imageFile));
+              identifyWindows(imageFile); // Call to identify windows in the image
             }, "image/png");
           }, 1000);
         });
@@ -60,6 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (file) {
       imageFile = file;
       displayImage(URL.createObjectURL(file));
+      identifyWindows(file); // Call to identify windows in the image
     }
   });
 
@@ -99,6 +110,47 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Crop button listener
+  cropButton.addEventListener("click", async function () {
+    if (!selectedWindow || !imageFile) {
+      alert(
+        "Please upload an image or capture a screenshot and select a window to crop."
+      );
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("window", selectedWindow);
+
+    // API call to backend for cropping
+    try {
+      const response = await fetch("http://127.0.0.1:5000/crop_window", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      imageFile = new File([blob], "cropped.png", { type: "image/png" });
+
+      displayImage(url);
+
+      // Clear the window options and disable the crop button
+      windowOptions.innerHTML = '<option value="none">None</option>';
+      selectedWindow = null;
+      cropButton.disabled = true;
+    } catch (error) {
+      console.error("Error cropping image:", error);
+      imageResult.textContent = "Error cropping image. Please try again.";
+    }
+  });
+
   // Chatbot listener
   sendButton.addEventListener("click", async function () {
     const userMessage = userInput.value.trim();
@@ -125,17 +177,13 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       const data = await response.json();
-      console.log("API response:", data); // Debugging log
+      console.log("API response:", data);
 
       if (data.message) {
         const botMessage = data.message;
         const botMessageDiv = document.createElement("div");
         botMessageDiv.innerHTML = marked.parse(botMessage);
         chatLog.appendChild(botMessageDiv);
-
-        // Use Web Speech API to read out the bot's response
-        // const utterance = new SpeechSynthesisUtterance(botMessage);
-        // window.speechSynthesis.speak(utterance);
       } else {
         throw new Error("API response does not contain message.");
       }
@@ -147,12 +195,49 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Function to display the image
+  // Function for displaying images
   function displayImage(src) {
     const img = document.createElement("img");
     img.src = src;
     img.alt = "Displayed image";
     imageResult.innerHTML = "";
     imageResult.appendChild(img);
+
+    // Enable the crop button when an image is displayed
+    cropButton.disabled = false;
+  }
+
+  // Listener for identifying windows
+  async function identifyWindows(imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    // API call for identifying windows
+    try {
+      const response = await fetch("http://127.0.0.1:5000/identify_windows", {
+        method: "POST",
+        body: formData,
+      });
+
+      let data = await response.json();
+      data = JSON.parse(data);
+      console.log("Identify Windows response:", data);
+
+      if (data.windows) {
+        windowOptions.innerHTML = '<option value="none">None</option>'; // Clear existing options and add default
+        data.windows.forEach((window, index) => {
+          const option = document.createElement("option");
+          option.value = window;
+          option.textContent = window;
+          windowOptions.appendChild(option);
+        });
+      } else {
+        throw new Error("API response does not contain windows.");
+      }
+    } catch (error) {
+      console.error("Error identifying windows:", error);
+      windowOptions.innerHTML =
+        "<option>Error identifying windows. Please try again.</option>";
+    }
   }
 });

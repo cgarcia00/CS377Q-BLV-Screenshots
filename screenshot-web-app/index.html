@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Accessible Screenshot/Redactions App</title>
+    <title>Accessible Screenshot/Redactation App</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </head>
   <body>
-    <h1>Accessible Screenshot/Redactions App</h1>
+    <h1>Accessible Screenshot/Redactation App</h1>
 
     <button id="captureButton" aria-describedby="captureDesc">
       Capture Entire Screen
@@ -45,12 +45,24 @@
 
     <button id="redactButton">Submit Redaction</button>
 
+    <div>
+      <label for="windowOptions" aria-describedby="windowDesc"
+        >Select Window:</label
+      >
+      <select id="windowOptions">
+        <!-- Options will be populated dynamically -->
+      </select>
+      <span id="windowDesc" class="sr-only">Select a window in the image</span>
+    </div>
+
+    <button id="cropButton">Submit Cropping</button>
+
     <div id="mainContent">
       <div id="imageSection">
         <div id="imageResult" aria-live="assertive"></div>
       </div>
       <div id="chatbox">
-        <h2>Chat with GPT-4</h2>
+        <h2>Image Query Chatbot</h2>
         <div id="chatLog"></div>
         <input
           type="text"

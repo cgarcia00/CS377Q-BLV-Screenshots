@@ -9,6 +9,7 @@ import io
 import base64
 import openai
 from flask_cors import CORS
+import json
 
 app = Flask(__name__)
 CORS(app)  # Enables CORS
@@ -53,9 +54,9 @@ def redact_image():
         image_np = image_np.astype(np.uint8)
     
     if len(image_np.shape) == 2:  # If grayscale, convert to color
-        image_np = cv2.cvtColor(image_np, cv2.COLOR_GRAY2BGR)
+        image_np = cv2.cvtColor(image_np, cv2.COLOR_GRAY2RGB)
     elif image_np.shape[2] == 4:  # If RGBA, convert to RGB
-        image_np = cv2.cvtColor(image_np, cv2.COLOR_RGBA2BGR)
+        image_np = cv2.cvtColor(image_np, cv2.COLOR_RGBA2RGB)
     
     # Convert the image to grayscale for OCR
     gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
@@ -84,10 +85,10 @@ def redact_image():
     inpainted_image = cv2.inpaint(image_np, mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
     
     # Convert the inpainted image from BGR to RGB
-    inpainted_image_rgb = cv2.cvtColor(inpainted_image, cv2.COLOR_BGR2RGB)
+    # inpainted_image_rgb = cv2.cvtColor(inpainted_image, cv2.COLOR_BGR2RGB)
     
     # Convert the inpainted image to a format suitable for sending back to the client
-    inpainted_image_pil = Image.fromarray(inpainted_image_rgb)
+    inpainted_image_pil = Image.fromarray(inpainted_image)
     byte_io = io.BytesIO()
     inpainted_image_pil.save(byte_io, format='JPEG')
     byte_io.seek(0)
@@ -143,6 +144,132 @@ def chat():
         return jsonify({'message': response.choices[0].message.content})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+# API endpoint for identifying windows
+@app.route('/identify_windows', methods=['POST'])
+def identify_windows():
+    
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
+    image_file = request.files['image']
+
+    # Convert the image to RGB if it's in RGBA mode
+    image = Image.open(image_file)
+    if image.mode == 'RGBA':
+        image = image.convert('RGB')
+    
+    # Convert the image to base64 for the prompt
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    base64_image = base64.b64encode(buffered.getvalue()).decode()
+
+    response = identify_windows(base64_image)
+    if 'error' in response:
+        return jsonify(response), 500
+    
+    return jsonify(response)
+
+# API endpoint for cropping windows
+@app.route('/crop_window', methods=['POST'])
+def crop_window():
+    if 'image' not in request.files or 'window' not in request.form:
+        return jsonify({'error': 'No image or window provided'}), 400
+
+    image_file = request.files['image']
+    window = request.form['window']
+
+    # Convert the image to RGB if it's in RGBA mode
+    image = Image.open(image_file)
+    if image.mode == 'RGBA':
+        image = image.convert('RGB')
+    
+    # Convert the image to base64 for the prompt
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    base64_image = base64.b64encode(buffered.getvalue()).decode()
+
+    # Call crop_browser_window
+    cropped_image = crop_browser_window(base64_image, image_file, window)
+
+    # Convert to a format suitable for sending back to the client
+    if cropped_image.mode == 'RGBA':
+        cropped_image = cropped_image.convert('RGB')
+
+    byte_io = io.BytesIO()
+    cropped_image.save(byte_io, format='JPEG')
+    byte_io.seek(0)
+    
+    return send_file(byte_io, mimetype='image/jpeg')
+
+# Helper functions
+
+# Helper function that returns a cropped image containing only the window specificed in the window variable
+def crop_browser_window(image_data, image_file, window):
+    with Image.open(image_file) as img:
+        width, height = img.size
+
+    prompt = f"""
+    I have an image with dimensions {width}x{height}. 
+    Please provide the coordinates to crop this image to only contain the {window}. 
+    Format the response as 'left, top, right, bottom' in json and say nothing else.
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+          messages=[
+            {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": f"{prompt}"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{image_data}",
+                    },
+                },
+            ],
+            }
+        ],
+        temperature=0.0,
+    )
+    response_string = response.choices[0].message.content
+    response_string = response_string[response_string.index("{"):response_string.rindex("}")+1]
+    coordinates = json.loads(response_string)
+    left, top, right, bottom = coordinates["left"], coordinates["top"], coordinates["right"], coordinates["bottom"]
+
+    with Image.open(image_file) as img:
+        cropped_img = img.crop((left, top, right, bottom))
+        
+        return cropped_img
+
+# Helper function for the identify windows endpoint that returns a json with an attribute called "windows" that has a list of window names
+def identify_windows(image_data):
+
+    prompt = 'Based on this image of a desktop screen return a json with brief 1-5 word descriptions of each open window. I want the format {"windows": [list of windows]}.Return nothing but the json.'
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"{prompt}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{image_data}",
+                        },
+                    },
+                ],
+                }
+            ],
+            temperature=0.0,
+        )
+        response_string = response.choices[0].message.content
+        response_string = response_string[response_string.index("{"):response_string.rindex("}")+1]
+        return response_string
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 if __name__ == '__main__':
     app.run(debug=True)
