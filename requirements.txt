@@ -4,6 +4,7 @@
 opencv-python
 pillow
 easyocr
+pytesseract
 
 # Screenshot Tool GUI
 py3-tts
