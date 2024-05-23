@@ -89,10 +89,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // API call to backend
     try {
-      const response = await fetch("http://127.0.0.1:5000/redact", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/redact",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Network response was not ok");
@@ -125,10 +128,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // API call to backend for cropping
     try {
-      const response = await fetch("http://127.0.0.1:5000/crop_window", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/crop_window",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Network response was not ok");
@@ -171,10 +177,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // API call to backend for chat
     try {
-      const response = await fetch("http://127.0.0.1:5000/chat", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/chat",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const data = await response.json();
       console.log("API response:", data);
@@ -214,10 +223,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // API call for identifying windows
     try {
-      const response = await fetch("http://127.0.0.1:5000/identify_windows", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/identify_windows",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       let data = await response.json();
       data = JSON.parse(data);
