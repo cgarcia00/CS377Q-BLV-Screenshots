@@ -201,6 +201,58 @@ def crop_window():
     
     return send_file(byte_io, mimetype='image/jpeg')
 
+# API endpoint for alt text generation
+@app.route('/alt', methods=['POST'])
+def alt():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image or message provided'}), 400
+
+    image_file = request.files['image']
+
+
+    # Convert the image to RGB if it's in RGBA mode
+    image = Image.open(image_file)
+    if image.mode == 'RGBA':
+        image = image.convert('RGB')
+
+    # Resize the image to reduce the size
+    max_size = (500, 500)
+    image.thumbnail(max_size, Image.LANCZOS)
+    
+    # Convert the image to base64 for the prompt
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    base64_image = base64.b64encode(buffered.getvalue()).decode()
+
+
+    prompt = f"The image is a desktop screenshot. It is from a tool specializing in cropping and redaction. Generate brief alt-text for this image. Make sure to mention the window and if any text is redacted. \nImage base64: {base64_image}"
+
+    try:
+        # OpenAI API call
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"{prompt}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{base64_image}",
+                        },
+                    },
+                ],
+                }
+            ],
+            # Temperature set low for determinism
+            temperature=0.0,
+        )
+        print(response.choices[0].message.content)
+        return jsonify({'alt': response.choices[0].message.content})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Helper functions
 
 # Helper function that returns a cropped image containing only the window specificed in the window variable
