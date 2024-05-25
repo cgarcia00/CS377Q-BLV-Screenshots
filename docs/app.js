@@ -9,24 +9,22 @@ document.addEventListener("DOMContentLoaded", function () {
   const chatLog = document.getElementById("chatLog");
   const userInput = document.getElementById("userInput");
   const sendButton = document.getElementById("sendButton");
+  const readAltButton = document.getElementById("readAltButton");
 
   let selectedRedactOption = "none";
   let selectedWindow = null;
   let imageFile = null;
 
-  // Listener for selecting redaction option
   redactOptions.addEventListener("change", function (event) {
     selectedRedactOption = event.target.value;
     console.log("Selected Redact Option:", selectedRedactOption);
   });
 
-  // Listener for selection window
   windowOptions.addEventListener("change", function (event) {
     selectedWindow = event.target.value;
     console.log("Selected Window:", selectedWindow);
   });
 
-  // Listener for screenshotting
   captureButton.addEventListener("click", async function () {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -53,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 type: "image/png",
               });
               displayImage(URL.createObjectURL(imageFile));
-              identifyWindows(imageFile); // Call to identify windows in the image
+              identifyWindows(imageFile);
             }, "image/png");
           }, 1000);
         });
@@ -64,17 +62,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Listener for upload
   uploadInput.addEventListener("change", function (event) {
     const file = event.target.files[0];
     if (file) {
       imageFile = file;
       displayImage(URL.createObjectURL(file));
-      identifyWindows(file); // Call to identify windows in the image
+      identifyWindows(file);
     }
   });
 
-  // Listenr for redact button
   redactButton.addEventListener("click", async function () {
     if (selectedRedactOption === "none" || !imageFile) {
       alert(
@@ -87,7 +83,6 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("image", imageFile);
     formData.append("category", selectedRedactOption);
 
-    // API call to backend
     try {
       const response = await fetch(
         "https://cs377q-fvmxgzmagq-wl.a.run.app/redact",
@@ -113,7 +108,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Crop button listener
   cropButton.addEventListener("click", async function () {
     if (!selectedWindow || !imageFile) {
       alert(
@@ -126,7 +120,6 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("image", imageFile);
     formData.append("window", selectedWindow);
 
-    // API call to backend for cropping
     try {
       const response = await fetch(
         "https://cs377q-fvmxgzmagq-wl.a.run.app/crop_window",
@@ -147,7 +140,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       displayImage(url);
 
-      // Clear the window options and disable the crop button
       windowOptions.innerHTML = '<option value="none">None</option>';
       selectedWindow = null;
       cropButton.disabled = true;
@@ -157,7 +149,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Chatbot listener
   sendButton.addEventListener("click", async function () {
     const userMessage = userInput.value.trim();
     if (!userMessage || !imageFile) {
@@ -175,7 +166,6 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("message", userMessage);
     formData.append("image", imageFile);
 
-    // API call to backend for chat
     try {
       const response = await fetch(
         "https://cs377q-fvmxgzmagq-wl.a.run.app/chat",
@@ -204,24 +194,65 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Function for displaying images
+  readAltButton.addEventListener("click", function () {
+    const img = document.getElementById("currentImage");
+    if (img && img.alt) {
+      readAltText(img.alt);
+    }
+  });
+
   function displayImage(src) {
     const img = document.createElement("img");
     img.src = src;
-    img.alt = "Displayed image";
+    img.alt = "Loading image description...";
+    img.id = "currentImage";
+    img.tabIndex = 0; // Make the image focusable
     imageResult.innerHTML = "";
     imageResult.appendChild(img);
 
-    // Enable the crop button when an image is displayed
     cropButton.disabled = false;
+
+    updateAltText(imageFile);
   }
 
-  // Listener for identifying windows
+  async function updateAltText(imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    try {
+      const response = await fetch(
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/alt",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      const altText = data.alt;
+
+      const img = document.getElementById("currentImage");
+      if (img) {
+        img.alt = altText;
+      }
+    } catch (error) {
+      console.error("Error updating alt text:", error);
+    }
+  }
+
+  function readAltText(altText) {
+    const utterance = new SpeechSynthesisUtterance(altText);
+    window.speechSynthesis.speak(utterance);
+  }
+
   async function identifyWindows(imageFile) {
     const formData = new FormData();
     formData.append("image", imageFile);
 
-    // API call for identifying windows
     try {
       const response = await fetch(
         "https://cs377q-fvmxgzmagq-wl.a.run.app/identify_windows",
@@ -236,7 +267,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("Identify Windows response:", data);
 
       if (data.windows) {
-        windowOptions.innerHTML = '<option value="none">None</option>'; // Clear existing options and add default
+        windowOptions.innerHTML = '<option value="none">None</option>';
         data.windows.forEach((window, index) => {
           const option = document.createElement("option");
           option.value = window;
