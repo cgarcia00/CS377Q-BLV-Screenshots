@@ -6,6 +6,7 @@
     <title>Accessible Screenshot/Redactation App</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
   </head>
   <body>
     <h1>Accessible Screenshot/Redactation App</h1>
@@ -26,7 +27,12 @@
       <label for="uploadInput" aria-describedby="uploadDesc"
         >Upload an Image:</label
       >
-      <input type="file" id="uploadInput" accept="image/*" />
+      <input
+        type="file"
+        id="uploadInput"
+        accept="image/*"
+        aria-describedby="uploadDesc"
+      />
       <span id="uploadDesc" class="sr-only"
         >Select an image file to upload</span
       >
@@ -38,7 +44,7 @@
           <label for="redactOptions" aria-describedby="redactDesc"
             >Select Redact Option:</label
           >
-          <select id="redactOptions">
+          <select id="redactOptions" aria-describedby="redactDesc">
             <option value="none">None</option>
             <option value="email">Email</option>
             <option value="phone">Phone</option>
@@ -49,8 +55,9 @@
             >Select an option to redact from the image</span
           >
         </div>
-
-        <button id="redactButton">Submit Redaction</button>
+        <button id="redactButton" aria-describedby="redactDesc">
+          Submit Redaction
+        </button>
       </div>
 
       <div id="cropTool">
@@ -58,15 +65,16 @@
           <label for="windowOptions" aria-describedby="windowDesc"
             >Select Window:</label
           >
-          <select id="windowOptions">
+          <select id="windowOptions" aria-describedby="windowDesc">
             <!-- Options will be populated dynamically -->
           </select>
           <span id="windowDesc" class="sr-only"
             >Select a window in the image</span
           >
         </div>
-
-        <button id="cropButton">Submit Cropping</button>
+        <button id="cropButton" aria-describedby="windowDesc">
+          Submit Cropping
+        </button>
       </div>
     </div>
 
@@ -76,16 +84,24 @@
       <div id="imageSection">
         <div id="imageResult" aria-live="assertive"></div>
         <button id="readAltButton">Read Image Description</button>
+        <button id="downloadZipButton">Download Image and Description</button>
       </div>
-      <div id="chatbox">
-        <h2>Image Query Chatbot</h2>
-        <div id="chatLog"></div>
+      <div id="chatbox" aria-live="polite" tabindex="0">
         <input
           type="text"
           id="userInput"
-          placeholder="Ask about the image..."
+          placeholder="Ask about the image here..."
         />
         <button id="sendButton">Send</button>
+        <h2>Image Query Chatbot</h2>
+        <div id="chatLog" tabindex="0" aria-describedby="logDesc">
+          <span id="logDesc" class="sr-only"
+            >Log area. New messages will appear at the top</span
+          >
+        </div>
+        <span class="sr-only"
+          >This is the chatbox. Next is the query area.</span
+        >
       </div>
     </div>
 

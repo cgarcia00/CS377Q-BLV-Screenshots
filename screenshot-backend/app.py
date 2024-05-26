@@ -118,7 +118,7 @@ def chat():
     image.save(buffered, format="JPEG")
     base64_image = base64.b64encode(buffered.getvalue()).decode()
 
-    prompt = f"Answer this user message briefly in at most 50 words. User message: {user_message}\nImage base64: {base64_image}"
+    prompt = f"Answer this user message briefly in at most 50 words. User message: {user_message}"
 
     try:
         # OpenAI API call
@@ -139,7 +139,7 @@ def chat():
                 }
             ],
             # Temperature set low for determinism
-            temperature=0.0,
+            temperature=1.0,
         )
         return jsonify({'message': response.choices[0].message.content})
     except Exception as e:
@@ -223,9 +223,85 @@ def alt():
     buffered = io.BytesIO()
     image.save(buffered, format="JPEG")
     base64_image = base64.b64encode(buffered.getvalue()).decode()
+    alt_text = ""
+
+    prompt = f"The image should be a desktop screenshot. Generate brief alt-text for this image."
+
+    try:
+        # OpenAI API call
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"{prompt}"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{base64_image}",
+                        },
+                    },
+                ],
+                }
+            ],
+            temperature=1.0,
+        )
+        alt_text += response.choices[0].message.content
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    try:
+        # OpenAI API call for alt text for redactions
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f'If there are green bars redacting information in the image say "The following has been redacted" followed by what has been redacted. If nothing has been redacted say "Nothing has been redacted."'},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{base64_image}",
+                        },
+                    },
+                ],
+                }
+            ],
+            temperature=1.0,
+        )
+        alt_text += " " + response.choices[0].message.content
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    return jsonify({'alt': alt_text})
+    
+# API endpoint for alt text generation
+@app.route('/filename', methods=['POST'])
+def filename():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image or message provided'}), 400
+
+    image_file = request.files['image']
 
 
-    prompt = f"The image is a desktop screenshot. It is from a tool specializing in cropping and redaction. Generate brief alt-text for this image. Make sure to mention the window and if any text is redacted. \nImage base64: {base64_image}"
+    # Convert the image to RGB if it's in RGBA mode
+    image = Image.open(image_file)
+    if image.mode == 'RGBA':
+        image = image.convert('RGB')
+
+    # Resize the image to reduce the size
+    max_size = (500, 500)
+    image.thumbnail(max_size, Image.LANCZOS)
+    
+    # Convert the image to base64 for the prompt
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    base64_image = base64.b64encode(buffered.getvalue()).decode()
+
+
+    prompt = f"Based on this image generate a short file name."
 
     try:
         # OpenAI API call
@@ -249,7 +325,7 @@ def alt():
             temperature=0.0,
         )
         print(response.choices[0].message.content)
-        return jsonify({'alt': response.choices[0].message.content})
+        return jsonify({'filename': response.choices[0].message.content})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
