@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const userInput = document.getElementById("userInput");
   const sendButton = document.getElementById("sendButton");
   const readAltButton = document.getElementById("readAltButton");
+  const downloadZipButton = document.getElementById("downloadZipButton");
 
   let selectedRedactOption = "none";
   let selectedWindow = null;
@@ -85,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.app/redact",
+        "https://cs377q-fvmxgzmagq-wl.a.run.appredact",
         {
           method: "POST",
           body: formData,
@@ -122,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.app/crop_window",
+        "https://cs377q-fvmxgzmagq-wl.a.run.appcrop_window",
         {
           method: "POST",
           body: formData,
@@ -158,7 +159,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const userMessageDiv = document.createElement("div");
     userMessageDiv.textContent = `User: ${userMessage}`;
-    chatLog.appendChild(userMessageDiv);
+    userMessageDiv.tabIndex = 0;
+    chatLog.insertBefore(userMessageDiv, chatLog.firstChild);
 
     userInput.value = "";
 
@@ -168,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.app/chat",
+        "https://cs377q-fvmxgzmagq-wl.a.run.appchat",
         {
           method: "POST",
           body: formData,
@@ -182,7 +184,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const botMessage = data.message;
         const botMessageDiv = document.createElement("div");
         botMessageDiv.innerHTML = marked.parse(botMessage);
-        chatLog.appendChild(botMessageDiv);
+        botMessageDiv.tabIndex = 0;
+        chatLog.insertBefore(botMessageDiv, chatLog.firstChild);
+        notifyNewMessage();
       } else {
         throw new Error("API response does not contain message.");
       }
@@ -190,7 +194,8 @@ document.addEventListener("DOMContentLoaded", function () {
       console.error("Error calling chat API:", error);
       const errorMessageDiv = document.createElement("div");
       errorMessageDiv.textContent = "Error calling chat API. Please try again.";
-      chatLog.appendChild(errorMessageDiv);
+      errorMessageDiv.tabIndex = 0;
+      chatLog.insertBefore(errorMessageDiv, chatLog.firstChild);
     }
   });
 
@@ -198,6 +203,38 @@ document.addEventListener("DOMContentLoaded", function () {
     const img = document.getElementById("currentImage");
     if (img && img.alt) {
       readAltText(img.alt);
+    }
+  });
+
+  downloadZipButton.addEventListener("click", async function () {
+    if (!imageFile) {
+      alert("Please upload an image or capture a screenshot first.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+
+      const response = await fetch(
+        "https://cs377q-fvmxgzmagq-wl.a.run.appfilename",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      const filename = data.filename;
+      const altText = document.getElementById("currentImage").alt;
+
+      createAndDownloadZip(filename, imageFile, altText);
+    } catch (error) {
+      console.error("Error fetching filename:", error);
     }
   });
 
@@ -221,7 +258,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.app/alt",
+        "https://cs377q-fvmxgzmagq-wl.a.run.appalt",
         {
           method: "POST",
           body: formData,
@@ -255,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.app/identify_windows",
+        "https://cs377q-fvmxgzmagq-wl.a.run.appidentify_windows",
         {
           method: "POST",
           body: formData,
@@ -282,5 +319,34 @@ document.addEventListener("DOMContentLoaded", function () {
       windowOptions.innerHTML =
         "<option>Error identifying windows. Please try again.</option>";
     }
+  }
+
+  async function createAndDownloadZip(filename, imageFile, altText) {
+    const zip = new JSZip();
+    zip.file(`${filename}.txt`, altText);
+    zip.file(`${filename}.png`, await imageFile.arrayBuffer());
+
+    zip.generateAsync({ type: "blob" }).then((content) => {
+      const a = document.createElement("a");
+      const url = URL.createObjectURL(content);
+      a.href = url;
+      a.download = `${filename}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+  }
+
+  function notifyNewMessage() {
+    const liveRegion = document.createElement("div");
+    liveRegion.setAttribute("aria-live", "assertive");
+    liveRegion.setAttribute("role", "alert");
+    liveRegion.classList.add("sr-only");
+    liveRegion.innerText = "New message received.";
+    document.body.appendChild(liveRegion);
+
+    setTimeout(() => {
+      document.body.removeChild(liveRegion);
+    }, 1000);
   }
 });
