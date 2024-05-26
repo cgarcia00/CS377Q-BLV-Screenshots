@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.appredact",
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/redact",
         {
           method: "POST",
           body: formData,
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.appcrop_window",
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/crop_window",
         {
           method: "POST",
           body: formData,
@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.appchat",
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/chat",
         {
           method: "POST",
           body: formData,
@@ -217,7 +217,7 @@ document.addEventListener("DOMContentLoaded", function () {
       formData.append("image", imageFile);
 
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.appfilename",
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/filename",
         {
           method: "POST",
           body: formData,
@@ -258,7 +258,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.appalt",
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/alt",
         {
           method: "POST",
           body: formData,
@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const response = await fetch(
-        "https://cs377q-fvmxgzmagq-wl.a.run.appidentify_windows",
+        "https://cs377q-fvmxgzmagq-wl.a.run.app/identify_windows",
         {
           method: "POST",
           body: formData,
