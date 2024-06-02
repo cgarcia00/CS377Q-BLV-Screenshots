@@ -14,14 +14,12 @@ body {
     border: 0;
 }
 
-#screenshotResult img, #imageResult img {
-    max-width: 100%;
+#mainContent, #redactTool, #cropTool, #downloadZipButton, #line{
+    display: none;
 }
 
-#mainContent {
-    display: flex;
-    justify-content: space-between;
-    align-items:flex-start;
+#screenshotResult img, #imageResult img {
+    max-width: 100%;
 }
 
 #imageSection {
@@ -55,10 +53,9 @@ body {
     flex-direction: row;
     gap: 20px; /* Adds space between items */
     margin-top: 1%;
-  }
-  
+}
+
 #redactTool, #cropTool {
-    display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px; /* Adds space between label/select and button */
@@ -67,8 +64,8 @@ body {
 #redactButton, #cropButton {
     width: 200px;
 }
-  
-#captureContainer, #uploadContainer {
+
+#line, #captureContainer, #uploadContainer {
     margin-top: 1%;
 }
 
@@ -77,5 +74,8 @@ body {
     height: 1px;
     background-color: rgb(151, 151, 151);
     margin: 20px 0;
-  }
-  
+}
+
+#downloadzipbutton {
+    width: 1%;
+}
