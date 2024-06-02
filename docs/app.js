@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const captureButton = document.getElementById("captureButton");
   const uploadInput = document.getElementById("uploadInput");
   const imageResult = document.getElementById("imageResult");
   const redactOptions = document.getElementById("redactOptions");
@@ -9,7 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const chatLog = document.getElementById("chatLog");
   const userInput = document.getElementById("userInput");
   const sendButton = document.getElementById("sendButton");
-  const readAltButton = document.getElementById("readAltButton");
   const downloadZipButton = document.getElementById("downloadZipButton");
 
   let selectedRedactOption = "none";
@@ -26,49 +24,13 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Selected Window:", selectedWindow);
   });
 
-  captureButton.addEventListener("click", async function () {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { cursor: "always" },
-      });
-
-      const video = document.createElement("video");
-      video.srcObject = stream;
-      video.onloadedmetadata = function () {
-        video.play();
-
-        video.addEventListener("playing", () => {
-          setTimeout(() => {
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext("2d");
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            stream.getTracks().forEach((track) => track.stop());
-
-            canvas.toBlob((blob) => {
-              imageFile = new File([blob], "screenshot.png", {
-                type: "image/png",
-              });
-              displayImage(URL.createObjectURL(imageFile));
-              identifyWindows(imageFile);
-            }, "image/png");
-          }, 1000);
-        });
-      };
-    } catch (error) {
-      console.error("Error capturing screen:", error);
-      imageResult.textContent = "Error capturing screen. Please try again.";
-    }
-  });
-
   uploadInput.addEventListener("change", function (event) {
     const file = event.target.files[0];
     if (file) {
       imageFile = file;
       displayImage(URL.createObjectURL(file));
       identifyWindows(file);
+      showTools(); // Show the hidden elements after image upload
     }
   });
 
@@ -196,13 +158,6 @@ document.addEventListener("DOMContentLoaded", function () {
       errorMessageDiv.textContent = "Error calling chat API. Please try again.";
       errorMessageDiv.tabIndex = 0;
       chatLog.insertBefore(errorMessageDiv, chatLog.firstChild);
-    }
-  });
-
-  readAltButton.addEventListener("click", function () {
-    const img = document.getElementById("currentImage");
-    if (img && img.alt) {
-      readAltText(img.alt);
     }
   });
 
@@ -348,5 +303,14 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => {
       document.body.removeChild(liveRegion);
     }, 1000);
+  }
+
+  function showTools() {
+    document.getElementById("mainContent").style.display = "flex";
+    document.getElementById("redactTool").style.display = "flex";
+    document.getElementById("cropTool").style.display = "flex";
+    document.getElementById("line").style.display = "block";
+    document.getElementById("downloadZipButton").style.display = "block";
+    document.getElementById("downloadZipButton").style.height = "1%";
   }
 });

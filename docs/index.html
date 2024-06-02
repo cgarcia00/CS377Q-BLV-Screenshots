@@ -11,18 +11,6 @@
   <body>
     <h1>AltEdit</h1>
 
-    <div id="captureContainer">
-      <label for="captureInput" aria-describedby="captureDesc"
-        >Take Screenshot:</label
-      >
-      <button id="captureButton" aria-describedby="captureDesc">
-        Select Screen Contents
-      </button>
-      <span id="captureDesc" class="sr-only"
-        >Click to select screen contents to capture</span
-      >
-    </div>
-
     <div id="uploadContainer">
       <label for="uploadInput" aria-describedby="uploadDesc"
         >Upload an Image:</label
@@ -38,9 +26,10 @@
       >
     </div>
 
-    <div id="toolBar">
-      <div id="redactTool">
+    <div id="toolBar" tabindex="0" aria-label="Tool Bar Area">
+      <div id="redactTool" tabindex="0" aria-label="Redaction Tool Area">
         <div>
+          <span class="sr-only">Redaction Tool</span>
           <label for="redactOptions" aria-describedby="redactDesc"
             >Select Redact Option:</label
           >
@@ -59,8 +48,7 @@
           Submit Redaction
         </button>
       </div>
-
-      <div id="cropTool">
+      <div id="cropTool" tabindex="0" aria-label="Crop Tool Area">
         <div>
           <label for="windowOptions" aria-describedby="windowDesc"
             >Select Window:</label
@@ -76,15 +64,17 @@
           Submit Cropping
         </button>
       </div>
+
+      <button id="downloadZipButton">Download Image and Description</button>
     </div>
 
-    <div class="line"></div>
+    <div id="line" class="line"></div>
 
     <div id="mainContent">
-      <div id="imageSection">
-        <div id="imageResult" aria-live="assertive"></div>
-        <button id="readAltButton">Read Image Description</button>
-        <button id="downloadZipButton">Download Image and Description</button>
+      <div tabindex="0" aria-label="Image Area press tab to read alt-text">
+        <div id="imageSection">
+          <div id="imageResult" aria-live="assertive"></div>
+        </div>
       </div>
       <div id="chatbox" aria-live="polite" tabindex="0">
         <input
